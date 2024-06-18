@@ -14,7 +14,7 @@ handy for home deployment.
 The plugin can be installed with the `docker plugin install` command:
 
 ```
-$ docker plugin install ghcr.io/devplayer0/docker-net-dhcp:release-linux-amd64
+$ docker plugin install ghcr.io/smartmuel/docker-net-dhcp:release-linux-amd64
 Plugin "ghcr.io/devplayer0/docker-net-dhcp:release-linux-amd64" is requesting the following privileges:
  - network: [host]
  - host pid namespace: [true]
