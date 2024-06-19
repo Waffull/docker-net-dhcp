@@ -36,4 +36,3 @@ dnsmasq --no-daemon --conf-file=/dev/null --dhcp-leasefile=/tmp/docker-net-dhcp.
     --dhcp-range="$DHCP6_RANGE" --enable-ra
 
 quit
-
