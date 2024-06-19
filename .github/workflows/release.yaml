@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      DOCKER_REPO: ghcr.io/devplayer0/docker-net-dhcp
+      DOCKER_REPO: ghcr.io/smartmuel/docker-net-dhcp
       PLATFORMS: linux/amd64,linux/386,linux/arm64,linux/arm/v7
 
     steps:
@@ -18,7 +18,18 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
+      - name: Install virtualenv
+        run: pip install virtualenv
+
+      - name: Create virtual environment
+        run: virtualenv venv
+        
       - name: Install script dependencies
         run: pip3 install -r scripts/requirements.txt
 
@@ -37,6 +48,13 @@ jobs:
           scripts/tag_multiarch_plugin.py -p $PLATFORMS "$DOCKER_REPO:latest" ${{ steps.vars.outputs.version }}
           scripts/tag_multiarch_plugin.py -p $PLATFORMS "$DOCKER_REPO:latest" release
 
+      - name: Push multiarch plugin
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          venv/bin/python scripts/push_multiarch_plugin.py -p $PLATFORMS config.json multiarch $DOCKER_REPO:${{ steps.vars.outputs.version }}
+      
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

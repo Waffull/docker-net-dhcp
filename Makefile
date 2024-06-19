@@ -1,4 +1,4 @@
-PLUGIN_NAME = ghcr.io/devplayer0/docker-net-dhcp
+PLUGIN_NAME = ghcr.io/smartmuel/docker-net-dhcp
 PLUGIN_TAG ?= golang
 PLATFORMS ?= linux/amd64,linux/arm64/v8
 

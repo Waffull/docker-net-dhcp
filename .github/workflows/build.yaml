@@ -10,34 +10,59 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      PLUGIN_NAME: ghcr.io/devplayer0/docker-net-dhcp
+      PLUGIN_NAME: ghcr.io/smartmuel/docker-net-dhcp
       PLATFORMS: linux/amd64,linux/386,linux/arm64,linux/arm/v7
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
 
       - name: Install script dependencies
-        run: pip3 install -r scripts/requirements.txt
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r scripts/requirements.txt
 
       - id: vars
         name: Generate build vars
         run: |
           SHA="${{ github.sha }}"
-          echo "::set-output name=tag::"${SHA:0:8}-$(date +%s)Z""
-
+          TAG="${SHA:0:8}-$(date +%s)Z"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "PLUGIN_NAME=${{ env.PLUGIN_NAME }}"
+          echo "TAG=${TAG}"
+          
       - name: Build
-        run: make PLUGIN_TAG=${{ steps.vars.outputs.tag }} multiarch
+        run: |
+          source venv/bin/activate
+          echo "Building with PLUGIN_NAME=${{ env.PLUGIN_NAME }} and TAG=${{ env.TAG }}"
+          make PLUGIN_TAG=${{ env.TAG }} multiarch
 
       - name: Push
         env:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          make PLUGIN_TAG=${{ steps.vars.outputs.tag }} push-multiarch
-          scripts/tag_multiarch_plugin.py -p "$PLATFORMS" "$PLUGIN_NAME:${{ steps.vars.outputs.tag }}" latest
+          source venv/bin/activate
+          echo "Pushing with PLUGIN_NAME=${{ env.PLUGIN_NAME }} and TAG=${{ env.TAG }}"
+          make PLUGIN_TAG=${{ env.TAG }} push-multiarch
+          scripts/tag_multiarch_plugin.py -p "$PLATFORMS" "$PLUGIN_NAME:${{ env.TAG }}" latest
